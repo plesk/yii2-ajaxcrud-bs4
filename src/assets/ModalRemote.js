@@ -186,6 +186,16 @@ function ModalRemote(modalId) {
             success: function (response) {
                 successRemoteResponse.call(instance, response);
             },
+            complete: function (jqXHR, textStatus) {
+                $(this.modal).trigger(
+                    "modalRemote:requestCompleted",
+                    {
+                        modalRemote: instance,
+                        jqXHR: jqXHR,
+                        textStatus: textStatus
+                    }
+                );
+            },
             contentType: false,
             cache: false,
             processData: false
@@ -198,6 +208,7 @@ function ModalRemote(modalId) {
      * - Show loading state in modal
      */
     function beforeRemoteRequest() {
+        $(this.modal).trigger("modalRemote:beforeRequest", {modalRemote: this});
         this.show();
         this.displayLoading();
     }
@@ -212,7 +223,14 @@ function ModalRemote(modalId) {
         this.setContent(response.responseText);
         this.addFooterButton('Close', 'button', 'btn btn-default', function (button, event) {
             this.hide();
-        })
+        });
+        $(this.modal).trigger(
+            "modalRemote:errorResponse",
+            {
+                modalRemote: this,
+                response: response
+            }
+        );
     }
 
     /**
@@ -234,6 +252,13 @@ function ModalRemote(modalId) {
         // Close modal if response contains forceClose field
         if (response.forceClose !== undefined && response.forceClose) {
             this.hide();
+            $(this.modal).trigger(
+                "modalRemote:successResponse",
+                {
+                    modalRemote: this,
+                    response: response
+                }
+            );
             return;
         }
 
@@ -255,6 +280,14 @@ function ModalRemote(modalId) {
                 $(this.footer).find('[type="submit"]')[0]
             );
         }
+
+        $(this.modal).trigger(
+            "modalRemote:successResponse",
+            {
+                modalRemote: this,
+                response: response
+            }
+        );
     }
 
     /**
